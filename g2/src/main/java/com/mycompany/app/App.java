@@ -2,6 +2,8 @@ package com.mycompany.app;
 
 import java.io.Console;
 import java.util.Random;
+import com.azure.core.credential.TokenCredential;
+import com.azure.identity.ClientSecretCredentialBuilder;
 import com.azure.storage.common.*;
 import com.azure.storage.file.datalake.*;
 import java.nio.file.Files;
@@ -14,9 +16,12 @@ public class App {
             size = Integer.parseInt(args[0]) * 1024 * 1024;
         }
 
+        String auth = "aad";
+        if (args.length > 1) {
+            auth = args[1];
+        }
+
         String endpoint = System.getenv("STORAGE_ENDPOINT");
-        String name = System.getenv("STORAGE_NAME");
-        String key = System.getenv("STORAGE_KEY");
         
         byte[] buffer = new byte[size];
         (new Random(0)).nextBytes(buffer);
@@ -29,13 +34,36 @@ public class App {
         catch (Exception e) {
         }
 
-        DataLakeServiceClient dataLakeServiceClient = new DataLakeServiceClientBuilder()
-        .endpoint(endpoint)
-        .credential(new StorageSharedKeyCredential(name, key))
-        .buildClient();
+        
+        DataLakeServiceClientBuilder builder = new DataLakeServiceClientBuilder()
+        .endpoint(endpoint);
+
+        System.out.println(auth);
+        if (auth.equals("aad")) {
+            String tenantId = System.getenv("AAD_TENANT_ID");
+            String clientId = System.getenv("AAD_CLIENT_ID");
+            String clientSecret = System.getenv("AAD_CLIENT_SECRET");
+
+            TokenCredential tokenCredential = new ClientSecretCredentialBuilder()
+            .tenantId(tenantId)
+            .clientId(clientId)
+            .clientSecret(clientSecret)
+            .build();
+
+            builder = builder.credential(tokenCredential);
+        } else if (auth.equals("sharedkey")) {
+            String name = System.getenv("STORAGE_NAME");
+            String key = System.getenv("STORAGE_KEY");
+            builder = builder.credential(new StorageSharedKeyCredential(name, key));
+        }
+        else {
+            System.out.println("Invalid auth method: '" + auth + "'");
+        }
+
+        DataLakeServiceClient serviceClient = builder.buildClient();
 
         DataLakeFileSystemClient fileSystemClient =
-             dataLakeServiceClient.getFileSystemClient("myfilesystem");
+             serviceClient.getFileSystemClient("myfilesystem");
 
         try {
             fileSystemClient.create();
@@ -45,7 +73,7 @@ public class App {
 
         DataLakeFileClient fileClient = fileSystemClient.getFileClient("myfile");
 
-        System.out.println(String.format("Uploading %d bytes ...", size));
+        System.out.println(String.format("Uploading %d bytes using %s...", size, auth));
         long t1 = System.currentTimeMillis();
         fileClient.uploadFromFile(tempFile.toString(), true);
         long t2 = System.currentTimeMillis();
