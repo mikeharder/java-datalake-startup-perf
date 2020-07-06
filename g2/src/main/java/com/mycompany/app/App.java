@@ -8,15 +8,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class App {
-    // 100 MB
-    private static final int _size = 100 * 1024 * 1024;
-
     public static void main(String[] args) {
+        int size = 1024 * 1024;
+        if (args.length > 0) {
+            size = Integer.parseInt(args[0]) * 1024 * 1024;
+        }
+
         String endpoint = System.getenv("STORAGE_ENDPOINT");
         String name = System.getenv("STORAGE_NAME");
         String key = System.getenv("STORAGE_KEY");
         
-        byte[] buffer = new byte[_size];
+        byte[] buffer = new byte[size];
         (new Random(0)).nextBytes(buffer);
         
         Path tempFile = null;
@@ -43,7 +45,7 @@ public class App {
 
         DataLakeFileClient fileClient = fileSystemClient.getFileClient("myfile");
 
-        System.out.println(String.format("Uploading %d bytes ...", _size));
+        System.out.println(String.format("Uploading %d bytes ...", size));
         long t1 = System.currentTimeMillis();
         fileClient.uploadFromFile(tempFile.toString(), true);
         long t2 = System.currentTimeMillis();
