@@ -18,9 +18,14 @@ public class App {
             size = Integer.parseInt(args[0]) * 1024 * 1024;
         }
 
-        boolean blockBeforeUpload = false;
+        int iterations = 1;
         if (args.length > 1) {
-            blockBeforeUpload = Boolean.parseBoolean(args[1]);
+            iterations = Integer.parseInt(args[1]);
+        }
+
+        boolean blockBeforeUpload = false;
+        if (args.length > 2) {
+            blockBeforeUpload = Boolean.parseBoolean(args[2]);
         }
 
         String endpoint = System.getenv("STORAGE_ENDPOINT_G1");
@@ -47,20 +52,21 @@ public class App {
         try {
             adlStoreClient.createDirectory("myfilesystem");
 
-            ADLFileOutputStream outStream = adlStoreClient.createFile("myfile", IfExists.OVERWRITE);
-            InputStream inputStream = new FileInputStream(tempFile.toString());
-
-            if (blockBeforeUpload) {
-                System.out.println("Press enter to upload...");
-                System.in.read();
+            for (int i=0; i < iterations; i++) {
+                if (blockBeforeUpload) {
+                    System.out.println("Press enter to upload...");
+                    System.in.read();
+                }
+    
+                System.out.println(String.format("Uploading %d bytes ...", size));
+                long t1 = System.currentTimeMillis();
+                ADLFileOutputStream outStream = adlStoreClient.createFile("myfile", IfExists.OVERWRITE);
+                InputStream inputStream = new FileInputStream(tempFile.toString());
+                copyStream(inputStream, outStream);
+                outStream.close();
+                long t2 = System.currentTimeMillis();
+                System.out.println(String.format("Completed in %d milliseconds", t2 - t1));
             }
-
-            System.out.println(String.format("Uploading %d bytes ...", size));
-            long t1 = System.currentTimeMillis();
-            copyStream(inputStream, outStream);
-            outStream.close();
-            long t2 = System.currentTimeMillis();
-            System.out.println(String.format("Completed in %d milliseconds", t2 - t1));
         }
         catch (Exception e) {
             System.out.println(e.toString());
