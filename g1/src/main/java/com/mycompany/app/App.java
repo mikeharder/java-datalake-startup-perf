@@ -50,8 +50,6 @@ public class App {
         ADLStoreClient adlStoreClient = ADLStoreClient.createClient(endpoint, provider);
         
         try {
-            adlStoreClient.createDirectory("myfilesystem");
-
             for (int i=0; i < iterations; i++) {
                 if (blockBeforeUpload) {
                     System.out.println("Press enter to upload...");
@@ -60,7 +58,8 @@ public class App {
     
                 System.out.println(String.format("Uploading %d bytes ...", size));
                 long t1 = System.currentTimeMillis();
-                ADLFileOutputStream outStream = adlStoreClient.createFile("myfile", IfExists.OVERWRITE);
+                // Assume filesystem already exists to simplify perf analysis
+                ADLFileOutputStream outStream = adlStoreClient.createFile("myfilesystem/myfile", IfExists.OVERWRITE);
                 InputStream inputStream = new FileInputStream(tempFile.toString());
                 copyStream(inputStream, outStream);
                 outStream.close();

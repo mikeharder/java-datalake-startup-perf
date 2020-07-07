@@ -21,9 +21,14 @@ public class App {
             auth = args[1];
         }
 
-        boolean blockBeforeUpload = false;
+        int iterations = 1;
         if (args.length > 2) {
-            blockBeforeUpload = Boolean.parseBoolean(args[2]);
+            iterations = Integer.parseInt(args[2]);
+        }
+
+        boolean blockBeforeUpload = false;
+        if (args.length > 3) {
+            blockBeforeUpload = Boolean.parseBoolean(args[3]);
         }
 
         String endpoint = System.getenv("STORAGE_ENDPOINT");
@@ -66,31 +71,28 @@ public class App {
 
         DataLakeServiceClient serviceClient = builder.buildClient();
 
+        // Assume filesystem already exists to simplify perf analysis
         DataLakeFileSystemClient fileSystemClient =
              serviceClient.getFileSystemClient("myfilesystem");
 
-        try {
-            fileSystemClient.create();
-        }
-        catch (Exception e) {
-        }
-
         DataLakeFileClient fileClient = fileSystemClient.getFileClient("myfile");
 
-        if (blockBeforeUpload) {
-            System.out.println("Press enter to upload...");
-            try {
-                System.in.read();
+        for (int i=0; i < iterations; i++) {
+            if (blockBeforeUpload) {
+                System.out.println("Press enter to upload...");
+                try {
+                    System.in.read();
+                }
+                catch (Exception e) {
+                    System.out.println(e.toString());
+                }
             }
-            catch (Exception e) {
-                System.out.println(e.toString());
-            }
+    
+            System.out.println(String.format("Uploading %d bytes using %s...", size, auth));
+            long t1 = System.currentTimeMillis();
+            fileClient.uploadFromFile(tempFile.toString(), true);
+            long t2 = System.currentTimeMillis();
+            System.out.println(String.format("Completed in %d milliseconds", t2 - t1));
         }
-
-        System.out.println(String.format("Uploading %d bytes using %s...", size, auth));
-        long t1 = System.currentTimeMillis();
-        fileClient.uploadFromFile(tempFile.toString(), true);
-        long t2 = System.currentTimeMillis();
-        System.out.println(String.format("Completed in %d milliseconds", t2 - t1));
     }
 }
