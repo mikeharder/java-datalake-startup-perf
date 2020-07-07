@@ -18,6 +18,11 @@ public class App {
             size = Integer.parseInt(args[0]) * 1024 * 1024;
         }
 
+        boolean blockBeforeUpload = false;
+        if (args.length > 1) {
+            blockBeforeUpload = Boolean.parseBoolean(args[1]);
+        }
+
         String endpoint = System.getenv("STORAGE_ENDPOINT_G1");
 
         String tenantId = System.getenv("AAD_TENANT_ID");
@@ -44,6 +49,11 @@ public class App {
 
             ADLFileOutputStream outStream = adlStoreClient.createFile("myfile", IfExists.OVERWRITE);
             InputStream inputStream = new FileInputStream(tempFile.toString());
+
+            if (blockBeforeUpload) {
+                System.out.println("Press enter to upload...");
+                System.in.read();
+            }
 
             System.out.println(String.format("Uploading %d bytes ...", size));
             long t1 = System.currentTimeMillis();

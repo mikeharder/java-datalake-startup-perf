@@ -21,6 +21,11 @@ public class App {
             auth = args[1];
         }
 
+        boolean blockBeforeUpload = false;
+        if (args.length > 2) {
+            blockBeforeUpload = Boolean.parseBoolean(args[2]);
+        }
+
         String endpoint = System.getenv("STORAGE_ENDPOINT");
         
         byte[] buffer = new byte[size];
@@ -71,6 +76,16 @@ public class App {
         }
 
         DataLakeFileClient fileClient = fileSystemClient.getFileClient("myfile");
+
+        if (blockBeforeUpload) {
+            System.out.println("Press enter to upload...");
+            try {
+                System.in.read();
+            }
+            catch (Exception e) {
+                System.out.println(e.toString());
+            }
+        }
 
         System.out.println(String.format("Uploading %d bytes using %s...", size, auth));
         long t1 = System.currentTimeMillis();
