@@ -38,7 +38,6 @@ public class App {
         DataLakeServiceClientBuilder builder = new DataLakeServiceClientBuilder()
         .endpoint(endpoint);
 
-        System.out.println(auth);
         if (auth.equals("aad")) {
             String tenantId = System.getenv("AAD_TENANT_ID");
             String clientId = System.getenv("AAD_CLIENT_ID");
